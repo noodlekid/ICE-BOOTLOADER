@@ -1,0 +1,69 @@
+# ---- Build outputs (CMake) ----
+build*/
+cmake-build*/
+out*/
+dist*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+Testing/
+.cache/
+
+# ---- Toolchain / IDE ----
+.vscode/
+.idea/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+
+# ---- STM32CubeIDE / Eclipse ----
+.settings/
+.project
+.cproject
+Debug/
+Release/
+
+# ---- Generated binaries / artifacts ----
+*.elf
+*.axf
+*.map
+*.hex
+*.bin
+*.srec
+*.lst
+*.d
+*.o
+*.a
+*.lib
+
+# ---- Linker / intermediate ----
+*.su
+*.i
+*.ii
+*.asm
+*.obj
+
+# ---- Debug / trace ----
+*.log
+*.dbg
+*.svd
+*.stlink
+
+# ---- OS / editor temp ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+*.tmp
+
+# ---- Python / scripts (if used) ----
+__pycache__/
+*.pyc
+
+# ---- Keep CMake presets if you use them ----
+# CMakePresets.json
+# CMakeUserPresets.json
