@@ -1,6 +1,8 @@
 #include "ice_delay.h"
 #include "ice_dwt.h"
 
+static volatile uint32_t ice_tick_counter = 0;
+
 
 void ICE_delay_init(){
     ICE_DWT_init();
@@ -17,4 +19,12 @@ void ICE_delay_us(uint32_t us){
 
 void ICE_delay_ms(uint32_t ms){
     ICE_delay_us((uint64_t)ms * 1000);
+}
+
+uint32_t ICE_get_tick(){
+    return ice_tick_counter;
+}
+
+void ICE_tick_inc(){
+    ice_tick_counter++;
 }

@@ -11,4 +11,9 @@ void ICE_delay_us(uint32_t us);
 
 void ICE_delay_ms(uint32_t ms);
 
+uint32_t ICE_get_tick();
+
+void ICE_tick_inc();
+
+
 #endif // ICE_DELAY_H

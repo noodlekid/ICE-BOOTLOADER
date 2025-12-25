@@ -49,7 +49,7 @@
   */
 
 /* USER CODE BEGIN PRIVATE_TYPES */
-
+typedef void (*CDC_RxCallback_t)(uint8_t *Buf, uint32_t Len);
 /* USER CODE END PRIVATE_TYPES */
 
 /**
@@ -94,7 +94,7 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
-
+static CDC_RxCallback_t p_rx_callback = NULL;
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -260,6 +260,9 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
+  if (p_rx_callback == NULL){
+    p_rx_callback(Buf, *Len);
+  }
   /* USER CODE BEGIN 6 */
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
@@ -316,7 +319,9 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
-
+void CDC_RegisterRxCallback(CDC_RxCallback_t cb) {
+    p_rx_callback = cb;
+}
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**

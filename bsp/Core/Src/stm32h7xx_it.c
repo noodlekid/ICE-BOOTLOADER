@@ -22,6 +22,7 @@
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ice_delay.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -168,7 +169,7 @@ void PendSV_Handler(void) {
  */
 void SysTick_Handler(void) {
     /* USER CODE BEGIN SysTick_IRQn 0 */
-
+    ICE_tick_inc();
     /* USER CODE END SysTick_IRQn 0 */
     HAL_IncTick();
     /* USER CODE BEGIN SysTick_IRQn 1 */
