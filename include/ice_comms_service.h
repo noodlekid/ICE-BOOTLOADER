@@ -1,0 +1,5 @@
+#ifndef ICE_COMMS_SERVICE_H
+#define ICE_COMMS_SERVICE_H
+
+
+#endif // ICE_COMMS_SERVICE_H

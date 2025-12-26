@@ -18,10 +18,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "crc.h"
 #include "gpio.h"
 #include "usb_device.h"
 
-extern int enter_bootloader();
+extern int bootloader();
 
 void SystemClock_Config(void);
 
@@ -42,8 +43,11 @@ int main(void) {
     MX_GPIO_Init();
     MX_USB_DEVICE_Init();
 
+    /* using Koopman 16-bit 0xBAAD polynomial, non-reversed */
+    crc_init_16bit(0x755B, 0xFFFF);
+
     while (1) {
-        enter_bootloader();
+        bootloader();
     }
 }
 

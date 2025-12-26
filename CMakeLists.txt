@@ -19,7 +19,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Set the project name
-set(CMAKE_PROJECT_NAME ETH_WHAA)
+set(CMAKE_PROJECT_NAME ice_firmware)
 
 # Enable compile command to ease indexing with e.g. clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
@@ -33,6 +33,13 @@ enable_language(C ASM)
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
+
+add_custom_command(
+    TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O binary ${CMAKE_PROJECT_NAME}.elf ${CMAKE_PROJECT_NAME}.bin
+    COMMENT "Generating raw binary: ${CMAKE_PROJECT_NAME}.bin"
+    BYPRODUCTS ${CMAKE_PROJECT_NAME}.bin
+)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -50,6 +57,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/ice_delay.c
     src/app_main.c 
     src/ice_transport_usb.c
+    src/ice_crc.c
 )
 
 # Add include paths
