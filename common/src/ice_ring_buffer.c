@@ -11,7 +11,7 @@ ICE_RB_status_t ICE_ring_buffer_init(ICE_ring_buffer_t *rb, uint8_t* buffer, uin
         return ICE_RB_NULL_ERR;
     }
 
-    if ((size == 0) || ((size & (size - 1)) == 0)) {
+    if ((size == 0) || ((size & (size - 1)) != 0)) {
         /* must be a power of base 2 */
         return ICE_RB_SIZE_MISMATCH;
     }
