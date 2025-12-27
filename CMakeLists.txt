@@ -57,6 +57,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/ice_delay.c
     src/app_main.c 
     src/ice_transport_usb.c
+    src/ice_comms_service.c
     src/ice_crc.c
 )
 

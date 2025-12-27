@@ -260,7 +260,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
-  if (p_rx_callback == NULL){
+  if (p_rx_callback != NULL){
     p_rx_callback(Buf, *Len);
   }
   /* USER CODE BEGIN 6 */
