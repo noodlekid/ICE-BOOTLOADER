@@ -7,7 +7,7 @@
 extern void CDC_RegisterRxCallback(void (*cb)(uint8_t*, uint32_t));
 
 static uint8_t buffer[2048];
-static ICE_ring_buffer_t usb_ring_buffer;
+static ice_ring_buffer_t usb_ring_buffer;
 
 
 static int32_t usb_write(ICE_TRANSPORT_t* self, const uint8_t *data, uint16_t len){
@@ -23,13 +23,13 @@ static int32_t usb_write(ICE_TRANSPORT_t* self, const uint8_t *data, uint16_t le
 }
 
 static void usb_rx_handler(uint8_t* Buf, uint32_t Len){
-    ICE_ring_buffer_put_many(&usb_ring_buffer, Buf, Len);
+    ice_ring_buffer_put_chunk(&usb_ring_buffer, Buf, Len);
 }
 
 static int32_t usb_read(ICE_TRANSPORT_t* self, uint8_t *data, uint16_t len){
     int32_t bytes_read = 0;
     while (bytes_read < len){
-        if (ICE_ring_buffer_pop(&usb_ring_buffer, &data[bytes_read]) == ICE_RB_OK){
+        if (ice_ring_buffer_pop(&usb_ring_buffer, &data[bytes_read]) == ICE_RB_OK){
             bytes_read++;
         } else {
             break;
@@ -45,7 +45,7 @@ static const ICE_TRANSPORT_ops_t usb_ops = {
 
 
 void ICE_TRANSPORT_usb_init(ICE_TRANSPORT_t* transport){
-    ICE_ring_buffer_init(&usb_ring_buffer, buffer, sizeof(buffer));
+    ice_ring_buffer_init(&usb_ring_buffer, buffer, sizeof(buffer));
     CDC_RegisterRxCallback(usb_rx_handler);
     transport->ops = &usb_ops;
     transport->handle = NULL;
