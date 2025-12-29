@@ -2,6 +2,17 @@
 #define ICE_RING_BUFFER_H
 
 #include <stdint.h>
+
+#ifdef ICE_RB_USE_CONF
+    #include "ice_ring_buffer_conf.h"
+#endif
+
+#ifndef ICE_RB_MEMORY_BARRIER
+    #define ICE_RB_MEMORY_BARRIER() __asm volatile("" ::: "memory")
+#endif
+
+
+
 typedef enum {
     ICE_RB_FULL,
     ICE_RB_EMPTY,

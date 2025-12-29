@@ -54,36 +54,33 @@ ice_rb_status_t ice_ring_buffer_pop(ice_ring_buffer_t *rb, uint8_t *data) {
 }
 
 ice_rb_status_t ice_ring_buffer_pop_chunk(ice_ring_buffer_t *rb, uint8_t *chunk, uint16_t len) {
-    if (rb == NULL)
+    if (rb == NULL || chunk == NULL)
         return ICE_RB_NULL_ERR;
 
     if (rb->tail == rb->head) {
         return ICE_RB_EMPTY;
     }
 
-    uint16_t head = rb->head;
-    uint16_t tail = rb->tail;
-    uint16_t size = rb->size_mask + 1;
-
-    uint16_t bytes_available = (size - tail + head - 1) & rb->size_mask;
+    uint16_t bytes_available = (rb->head - rb->tail) & rb->size_mask;
 
     if (bytes_available < len) {
         return ICE_RB_EMPTY;
     }
 
-    uint16_t chunk_1 = size - tail;
+    uint16_t size = rb->size_mask + 1;
+    uint16_t chunk_1 = size - rb->tail;
 
-    if (chunk_1 < len) {
+    if (len < chunk_1) {
         chunk_1 = len;
     }
 
-    memcpy(&rb->buffer[head], chunk, chunk_1);
+    memcpy(chunk, &rb->buffer[rb->tail], chunk_1);
 
     if (len > chunk_1) {
-        memcpy(&rb->buffer[0], &chunk[chunk_1], len - chunk_1);
+        memcpy(&chunk[chunk_1], &rb->buffer[0], len - chunk_1);
     }
 
-    rb->tail = (tail + len) & rb->size_mask;
+    rb->tail = (rb->tail + len) & rb->size_mask;
 
     return ICE_RB_OK;
 }
@@ -104,7 +101,7 @@ ice_rb_status_t ice_ring_buffer_put_chunk(ice_ring_buffer_t *rb, const uint8_t *
     }
 
     uint16_t chunk_1 = size - head;
-    if (chunk_1 < len) {
+    if (len < chunk_1) {
         chunk_1 = len;
     }
 
@@ -113,6 +110,8 @@ ice_rb_status_t ice_ring_buffer_put_chunk(ice_ring_buffer_t *rb, const uint8_t *
     if (len > chunk_1) {
         memcpy(&rb->buffer[0], &data[chunk_1], len - chunk_1);
     }
+
+    ICE_RB_MEMORY_BARRIER();
 
     rb->head = (head + len) & rb->size_mask;
 
