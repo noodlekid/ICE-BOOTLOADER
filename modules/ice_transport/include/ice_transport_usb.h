@@ -3,6 +3,6 @@
 
 #include "ice_transport.h"
 
-void ICE_TRANSPORT_usb_init(ICE_TRANSPORT_t* transport);
+void ice_transport_usb_init(ice_transport_t* transport);
 
 #endif // ICE_TRANSPORT_USB_H

@@ -18,6 +18,6 @@ typedef struct {
 typedef struct ICE_TRANSPORT_s {
     const ICE_TRANSPORT_ops_t *ops;
     void* handle;
-} ICE_TRANSPORT_t;
+} ice_transport_t;
 
 #endif // ICE_TRANSPORT_H

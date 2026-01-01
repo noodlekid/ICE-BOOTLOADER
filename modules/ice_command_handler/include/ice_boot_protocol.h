@@ -24,8 +24,7 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) {
     ice_boot_header_t header;
-    uint8_t payload[ICE_MAX_PAYLOAD_SIZE];
-    uint16_t crc;
+    uint8_t payload[ICE_MAX_PAYLOAD_SIZE]; // [payload - 254][crc - 2]
 } ice_boot_pdu_t;
 
 typedef union {
