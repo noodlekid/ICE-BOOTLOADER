@@ -12,6 +12,9 @@ typedef struct {
     ice_comms_frame_queue_t *outbox;
 } ice_packetizer_ctx_t;
 
+void ice_unpacketize(ice_transport_t *transport, ice_packetizer_ctx_t *ctx);
+void ice_unpacketizer_ctx_init(ice_packetizer_ctx_t *ctx, ice_comms_frame_queue_t* frame_queue);
+
 void ice_packetize(ice_transport_t *transport, ice_packetizer_ctx_t *ctx);
 void ice_packetizer_ctx_init(ice_packetizer_ctx_t *ctx, ice_comms_frame_queue_t* frame_queue);
 

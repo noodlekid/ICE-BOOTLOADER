@@ -21,7 +21,7 @@ typedef struct {
 
 
 /* gets a virgin buffer from the buffer pool */
-ice_frame_buffer_t* ice_alloc(void);
+ice_frame_buffer_t* ice_frame_alloc(void);
 
 /* resets frame buffer state */
 void ice_free(ice_frame_buffer_t* buffer);

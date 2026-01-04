@@ -13,6 +13,11 @@ typedef enum {
     BOOT        = 0x04,
 } ice_boot_codes_t;
 
+typedef enum {
+    ICE_FAIL,
+    ICE_OK,
+} ice_service_status_t;
+
 typedef struct __attribute__((packed)) {
     uint8_t op;       /* PING, ERASE, READ, WRITE */
     uint8_t seq_num;  /* packet ID for identifying duplicates */
