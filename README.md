@@ -10,3 +10,9 @@ A simple bootloader being made as a learning experience. The road map is as foll
 - setup cycle counter and delay interface (DWT) \[DONE\]
 - setup basic peripherals (LED) \[DONE\]
 
+## Future Improvment
+- Document command protocol
+- create stricter checks on packets (length, CRC) ensuring integrity.
+- seperate communications layers better.
+- reduce non-zero-copy memory copties in command response handler.
+- create maintainable tool for communicating with device (python? web application?)
