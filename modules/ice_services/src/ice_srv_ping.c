@@ -22,7 +22,7 @@
 
 static const char ping[] = PING_STRING;
 
-ice_service_status_t ice_srv_ping(uint8_t *resp_buf, uint16_t *resp_len) {
+ice_service_status_t ice_srv_ping(uint8_t *resp_buf, uint32_t *resp_len) {
     uint16_t data_size = sizeof(ping);
     memcpy(resp_buf, ping, data_size);
     *resp_len = data_size;

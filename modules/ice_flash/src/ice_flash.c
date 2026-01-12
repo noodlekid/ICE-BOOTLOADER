@@ -1,6 +1,8 @@
 #include "ice_flash.h"
+#include "ice_bit_utilities.h"
+#include "ice_delay.h"
 #include "stm32h743xx.h"
-#include "utility.h"
+#include <string.h>
 
 typedef struct {
     __IO uint32_t *CR;
@@ -9,7 +11,7 @@ typedef struct {
     __O uint32_t *CCR;
 } FlashBankRegs_t;
 
-void ICE_FLASH_unlock() {
+void ice_flash_unlock() {
     if (READ_BIT(FLASH->CR1, FLASH_CR_LOCK) != 0U) {
         FLASH->KEYR1 = FLASH_KEY_1;
         FLASH->KEYR1 = FLASH_KEY_2;
@@ -21,13 +23,15 @@ void ICE_FLASH_unlock() {
     }
 }
 
-void ICE_FLASH_lock() {
+void ice_flash_lock() {
     SET_BIT(FLASH->CR1, FLASH_CR_LOCK);
     SET_BIT(FLASH->CR2, FLASH_CR_LOCK);
 }
 
-static ICE_FLASH_StatusTypeDef ICE_FLASH_get_bank_registers(uint32_t address,
-                                                            FlashBankRegs_t *regs) {
+static ice_flash_status_t ice_flash_get_bank_registers(uint32_t address, FlashBankRegs_t *regs) {
+    if (regs == NULL) {
+        return ICE_FLASH_ERR;
+    }
     if (address >= FLASH_BANK_1_BEGIN_ADDR && address <= FLASH_BANK_1_END_ADDR) {
         regs->CR   = &FLASH->CR1;
         regs->SR   = &FLASH->SR1;
@@ -45,35 +49,59 @@ static ICE_FLASH_StatusTypeDef ICE_FLASH_get_bank_registers(uint32_t address,
     return ICE_FLASH_OUT_OF_RANGE_ERR;
 }
 
-static void ICE_FLASH_write256(uint32_t flash_addr, const uint32_t data_addr,
-                               FlashBankRegs_t *regs) {
+static ice_flash_status_t ice_flash_write256(uint32_t flash_addr, const uint8_t *data_addr,
+                                             FlashBankRegs_t *regs) {
+    ice_flash_status_t status = ICE_FLASH_OK;
+
+    uint32_t timeout_ms = 100;
+    uint32_t start_tick = ICE_get_tick();
+    while (READ_BIT(*(regs->SR), FLASH_SR_QW)) {
+        if (ICE_get_tick() - start_tick > timeout_ms)
+            return ICE_FLASH_TIMEOUT_ERR;
+    }
+
     SET_BIT(*(regs->CR), FLASH_CR_PG);
 
-    uint8_t row_index            = FLASH_NB_32BITWORD_IN_FLASHWORD;
     volatile uint32_t *dest_addr = (volatile uint32_t *)flash_addr;
-    volatile uint32_t *src_addr  = (volatile uint32_t *)data_addr;
+    const uint8_t *src_ptr       = data_addr;
+    uint32_t row_index           = FLASH_NB_32BITWORD_IN_FLASHWORD;
+
+    /* ENTER SAFE */
+    uint32_t primask_bit = __get_PRIMASK();
+    __disable_irq();
 
     __DSB();
     __ISB();
 
     do {
-        *dest_addr = *src_addr;
+        uint32_t word_to_write;
+        memcpy(&word_to_write, src_ptr, sizeof(uint32_t));
+        *dest_addr = word_to_write;
         dest_addr++;
-        src_addr++;
+        src_ptr += sizeof(uint32_t);
         row_index--;
     } while (row_index != 0U);
 
     __DSB();
     __ISB();
 
-    while (READ_BIT(*(regs->SR), FLASH_SR_QW))
-        ;
+    __set_PRIMASK(primask_bit);
+    /* EXIT SAFE */
+
+    start_tick = ICE_get_tick();
+    while (READ_BIT(*(regs->SR), FLASH_SR_QW)) {
+        if (ICE_get_tick() - start_tick > timeout_ms) {
+            status = ICE_FLASH_TIMEOUT_ERR;
+            break;
+        }
+    }
 
     CLEAR_BIT(*(regs->CR), FLASH_CR_PG);
+
+    return status;
 }
 
-ICE_FLASH_StatusTypeDef ICE_FLASH_write(uint32_t flash_addr, const uint32_t data_addr,
-                                        uint32_t length) {
+ice_flash_status_t ice_flash_write(uint32_t flash_addr, const uint8_t *data, uint32_t length) {
     /* check alignements or else stm will be angry */
     if ((flash_addr & FLASH_ALIGN_MASK) != 0U) {
         return ICE_FLASH_MISALIGNED_WRITE_ERR;
@@ -85,39 +113,40 @@ ICE_FLASH_StatusTypeDef ICE_FLASH_write(uint32_t flash_addr, const uint32_t data
 
     uint32_t bytes_written   = 0;
     uint32_t curr_flash_addr = flash_addr;
-    uint32_t curr_data_addr  = data_addr;
+    const uint8_t *curr_data_addr  = data;
 
     /* ensure no stale data is read, clean D-cache */
-    SCB_CleanDCache_by_Addr((uint32_t *)data_addr, length);
+    SCB_CleanDCache_by_Addr((uint32_t *)(uintptr_t)data, length);
 
-    ICE_FLASH_unlock();
+    ice_flash_unlock();
 
     while (bytes_written < length) {
         FlashBankRegs_t regs;
-        ICE_FLASH_get_bank_registers(curr_flash_addr, &regs);
+        ice_flash_get_bank_registers(curr_flash_addr, &regs);
 
         if (*(regs.SR) & (FLASH_SR_OPERR | FLASH_SR_WRPERR)) {
             *(regs.CCR) |= (FLASH_SR_OPERR | FLASH_SR_WRPERR);
         }
 
         /* writes must be 256 bits in size (32 bytes) */
-        ICE_FLASH_write256(curr_flash_addr, curr_data_addr, &regs);
+        ice_flash_write256(curr_flash_addr, curr_data_addr, &regs);
         if (*(regs.SR) & (FLASH_SR_PGSERR | FLASH_SR_INCERR | FLASH_SR_WRPERR)) {
-            ICE_FLASH_lock();
+            ice_flash_lock();
             return ICE_FLASH_WRITE_FAILURE;
         }
 
+
+        /* increment 256 bit (32 bytes) */
         bytes_written += 32;
         curr_flash_addr += 32;
         curr_data_addr += 32;
     }
 
-
-    ICE_FLASH_lock();
+    ice_flash_lock();
     return ICE_FLASH_OK;
 }
 
-ICE_FLASH_StatusTypeDef ICE_FLASH_read(uint32_t address, uint8_t *data, uint32_t length) {
+ice_flash_status_t ice_flash_read(uint32_t address, uint8_t *data, uint32_t length) {
     if (address < FLASH_REGION_BEGIN_ADDR || address > FLASH_REGION_END_ADDR ||
         ((address + length) > FLASH_REGION_END_ADDR + 1)) {
         return ICE_FLASH_OUT_OF_RANGE_ERR;
@@ -132,7 +161,7 @@ ICE_FLASH_StatusTypeDef ICE_FLASH_read(uint32_t address, uint8_t *data, uint32_t
     return ICE_FLASH_OK;
 }
 
-ICE_FLASH_StatusTypeDef ICE_FLASH_erase_sector(uint32_t bank_number, uint32_t sector_number) {
+ice_flash_status_t ice_flash_erase_sector(uint32_t bank_number, uint32_t sector_number) {
     FlashBankRegs_t reg;
     if (bank_number == 1) {
         reg.CR   = &FLASH->CR1;
@@ -152,8 +181,7 @@ ICE_FLASH_StatusTypeDef ICE_FLASH_erase_sector(uint32_t bank_number, uint32_t se
     if (sector_number > 7) {
         return ICE_FLASH_INVALID_SECTOR;
     }
-
-    ICE_FLASH_unlock();
+    ice_flash_unlock();
 
     uint32_t cr_val = *(reg.CR);
 
@@ -168,7 +196,6 @@ ICE_FLASH_StatusTypeDef ICE_FLASH_erase_sector(uint32_t bank_number, uint32_t se
 
     while (READ_BIT(*(reg.SR), FLASH_SR_BSY))
         ;
-      
 
     CLEAR_BIT(*(reg.CR), FLASH_CR_SER);
 
@@ -179,32 +206,34 @@ ICE_FLASH_StatusTypeDef ICE_FLASH_erase_sector(uint32_t bank_number, uint32_t se
     return ICE_FLASH_OK;
 }
 
-ICE_FLASH_StatusTypeDef ICE_FLASH_erase_range(uint32_t start_addr, uint32_t length) {
-    ICE_FLASH_StatusTypeDef status = ICE_FLASH_OK;
+ice_flash_status_t ice_flash_erase_range(uint32_t start_addr, uint32_t length) {
+    ice_flash_status_t status = ICE_FLASH_OK;
 
     uint32_t end_addr = start_addr + length - 1;
 
-    uint32_t start_bank   = ICE_FLASH_get_bank(start_addr);
-    uint32_t start_sector = ICE_FLASH_get_sector(start_addr);
+    uint32_t start_bank   = ice_flash_calculate_bank(start_addr);
+    uint32_t start_sector = ice_flash_calculate_sector(start_addr);
 
-    uint32_t end_bank     = ICE_FLASH_get_bank(end_addr);
-    uint32_t end_sector   = ICE_FLASH_get_sector(end_addr);
+    uint32_t end_bank   = ice_flash_calculate_bank(end_addr);
+    uint32_t end_sector = ice_flash_calculate_sector(end_addr);
 
     if (start_bank != end_bank) {
         for (uint32_t i = start_sector; i <= 7; i++) {
-            status = ICE_FLASH_erase_sector(start_bank, i);
-            if (status != ICE_FLASH_OK) return status;
+            status = ice_flash_erase_sector(start_bank, i);
+            if (status != ICE_FLASH_OK)
+                return status;
         }
 
         for (uint32_t i = 0; i <= end_sector; i++) {
-            status = ICE_FLASH_erase_sector(end_bank, i);
-            if (status != ICE_FLASH_OK) return status;
+            status = ice_flash_erase_sector(end_bank, i);
+            if (status != ICE_FLASH_OK)
+                return status;
         }
-    }
-    else {
+    } else {
         for (uint32_t i = start_sector; i <= end_sector; i++) {
-            status = ICE_FLASH_erase_sector(start_bank, i);
-            if (status != ICE_FLASH_OK) return status;
+            status = ice_flash_erase_sector(start_bank, i);
+            if (status != ICE_FLASH_OK)
+                return status;
         }
     }
 

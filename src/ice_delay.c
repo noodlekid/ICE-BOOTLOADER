@@ -26,5 +26,6 @@ uint32_t ICE_get_tick(){
 }
 
 void ICE_tick_inc(){
+    /* about every 1 ms*/
     ice_tick_counter++;
 }

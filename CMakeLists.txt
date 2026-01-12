@@ -44,7 +44,8 @@ add_custom_command(
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 add_subdirectory(common)
-add_subdirectory(modules/comms_engine)
+add_subdirectory(modules/ice_comms_engine)
+add_subdirectory(modules/ice_flash)
 add_subdirectory(modules/ice_transport)
 add_subdirectory(modules/ice_command_handler)
 add_subdirectory(modules/ice_services)
@@ -57,7 +58,6 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
-    src/ice_flash.c
     src/ice_delay.c
     src/app_main.c 
     src/ice_crc.c
@@ -86,4 +86,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     ice_transport
     ice_command_handler
     ice_services
+    ice_flash
 )

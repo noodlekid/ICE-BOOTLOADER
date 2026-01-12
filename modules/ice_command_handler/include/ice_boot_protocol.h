@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define ICE_MAX_PAYLOAD_SIZE 256
+#define ICE_MAX_PAYLOAD_SIZE 1500
 
 typedef enum {
     PING        = 0x00,

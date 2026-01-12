@@ -26,12 +26,13 @@ typedef enum {
     ICE_FLASH_OUT_OF_RANGE_ERR,
     ICE_FLASH_MISALIGNED_WRITE_ERR,
     ICE_FLASH_WRITE_FAILURE,
-} ICE_FLASH_StatusTypeDef;
+    ICE_FLASH_TIMEOUT_ERR,
+} ice_flash_status_t;
 
 
 
 
-static inline uint32_t ICE_FLASH_get_sector(uint32_t addr) {
+static inline uint32_t ice_flash_calculate_sector(uint32_t addr) {
     uint32_t bank_base = 0;
 
     if (addr >= FLASH_BANK2_BASE) {
@@ -47,7 +48,7 @@ static inline uint32_t ICE_FLASH_get_sector(uint32_t addr) {
     return sector_index;
 }
 
-static inline uint32_t ICE_FLASH_get_bank(uint32_t addr){
+static inline uint32_t ice_flash_calculate_bank(uint32_t addr){
     if (addr >= FLASH_BANK_1_BEGIN_ADDR && addr <= FLASH_BANK_1_END_ADDR) {
         return 1U;
     }
@@ -57,13 +58,13 @@ static inline uint32_t ICE_FLASH_get_bank(uint32_t addr){
     return 0U;
 }
 
-ICE_FLASH_StatusTypeDef ICE_FLASH_erase_sector(uint32_t bank_number, uint32_t sector_number);
-ICE_FLASH_StatusTypeDef ICE_FLASH_erase_range(uint32_t start_addr, uint32_t length);
-void ICE_FLASH_unlock_options(void);
-void ICE_FLASH_unlock(void);
-void ICE_FLASH_lock(void);
-ICE_FLASH_StatusTypeDef ICE_FLASH_write(uint32_t address, uint32_t data_addr, uint32_t length);
-ICE_FLASH_StatusTypeDef ICE_FLASH_read(uint32_t address, uint8_t *data, uint32_t length);
-void ICE_FLASH_crc(uint32_t address, uint32_t length, uint32_t *crc_out);
+ice_flash_status_t ice_flash_erase_sector(uint32_t bank_number, uint32_t sector_number);
+ice_flash_status_t ice_flash_erase_range(uint32_t start_addr, uint32_t length);
+void ice_flash_unlock_options(void);
+void ice_flash_unlock(void);
+void ice_flash_lock(void);
+ice_flash_status_t ice_flash_write(uint32_t address, const uint8_t *data_addr, uint32_t length);
+ice_flash_status_t ice_flash_read(uint32_t address, uint8_t *data, uint32_t length);
+void ice_flash_crc(uint32_t address, uint32_t length, uint32_t *crc_out);
 
 #endif // ICE_FLASH_H
